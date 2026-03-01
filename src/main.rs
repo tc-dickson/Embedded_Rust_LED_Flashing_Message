@@ -2,7 +2,7 @@
 #![no_main]
 
 use cortex_m_rt::entry;
-use panic_halt as _;
+use panic_rtt_target as _;
 use microbit;
 
 #[entry]
