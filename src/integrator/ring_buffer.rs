@@ -1,9 +1,9 @@
 // This module implements a basic ring buffer using MaybeUninit
 
-use core::{mem::MaybeUninit, usize};
+use core::mem::MaybeUninit;
 
 #[derive(Debug)]
-struct RingBuffer<T, const N: usize> {
+struct RingBuffer<T: Copy, const N: usize> {
     buffer: [MaybeUninit<T>; N],
     head: usize,
     tail: usize,
@@ -12,33 +12,43 @@ struct RingBuffer<T, const N: usize> {
 impl<T: Copy, const N: usize> RingBuffer<T, N> {
     pub const fn new() -> RingBuffer<T, N> {
         RingBuffer {
-            buffer: [MaybeUninit::<T>::uninit(); N],
+            buffer: [const { MaybeUninit::<T>::uninit() }; N],
             head: 0,
             tail: 0,
         }
     }
 
     pub fn push(&mut self, item: T) -> Result<(), T> {
-        // Check if the ring buffer is full
-        let next_head = (self.head + 1) % N;
-        if next_head == self.tail {
-            return Err(item);
+        // The ring buffer is full when the next_head equals the tail
+        if Self::next_index(self.head) == self.tail {
+            Err(item)
         } else {
             self.buffer[self.head].write(item);
-            self.head = next_head;
-            return Ok(());
+            self.head = Self::next_index(self.head);
+            Ok(())
         }
     }
 
     pub fn pop(&mut self) -> Option<T> {
-        // Check if ring buffer is empty
+        // The ring buffer is empty when the head equals the tail
         if self.head == self.tail {
-            return None;
+            None
         } else {
-            // Safe because the value will be initialized if head != tail
+            // Safe because the value will be initialized if tail != head
             let val = unsafe { Some(self.buffer[self.tail].assume_init()) };
-            self.tail = (self.tail + 1) % N;
-            return val;
+            self.tail = Self::next_index(self.tail);
+            val
         }
+    }
+
+    fn next_index(index: usize) -> usize {
+        (index + 1) % N
+    }
+
+}
+
+impl<T: Copy, const N: usize> Drop for RingBuffer<T, N> {
+    fn drop(&mut self) {
+        while self.pop().is_some() {}
     }
 }
