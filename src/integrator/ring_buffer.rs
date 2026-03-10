@@ -45,6 +45,47 @@ impl<T: Copy, const N: usize> RingBuffer<T, N> {
         (index + 1) % N
     }
 
+    fn ref_at_index(&self, index: usize) -> Result<&T, &str> {
+        // Make sure the index is within the range of indicies of the buffer
+        //
+        // Three cases
+        // If head == tail then the buffer is empty
+        // If head < tail then the in-range indecies after  head or  before tail have been initialized
+        // If head > tail then the in-range indecies before head and after  tail have been initialized
+        //
+        // NOTE: the head points to uninitialized data in this implementation, but the tail points
+        // to initialized data
+
+        let mut is_in_init_vals = false;
+        if index >= N {
+            return Err("index out of bounds");
+        }
+
+        match self.head.cmp(&self.tail) {
+            core::cmp::Ordering::Equal => {}
+            core::cmp::Ordering::Less => {
+                if index > self.head || index <= self.tail {
+                    is_in_init_vals = true;
+                }
+            }
+            core::cmp::Ordering::Greater => {
+                if index < self.head && index >= self.tail {
+                    is_in_init_vals = true;
+                }
+            }
+        }
+
+        // Safety: The value at the index has been initialized if it passes the above checks
+        if is_in_init_vals {
+            Ok(unsafe { self.buffer[index].assume_init_ref() })
+        } else {
+            Err("Index in uninitialized data")
+        }
+    }
+
+    pub fn iter(&self) -> RingBufferIter<'_, T, N> {
+        self.into_iter()
+    }
 }
 
 impl<T: Copy, const N: usize> Drop for RingBuffer<T, N> {
@@ -52,3 +93,32 @@ impl<T: Copy, const N: usize> Drop for RingBuffer<T, N> {
         while self.pop().is_some() {}
     }
 }
+
+//--------------------Iterator Implementation--------------------
+impl<'a, T: Copy, const N: usize> IntoIterator for &'a RingBuffer<T, N> {
+    type Item = &'a T;
+    type IntoIter = RingBufferIter<'a, T, N>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        RingBufferIter {
+            ring_buffer: self,
+            index: self.tail,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct RingBufferIter<'a, T: Copy, const N: usize> {
+    ring_buffer: &'a RingBuffer<T, N>,
+    index: usize,
+}
+
+impl<'a, T: Copy, const N: usize> Iterator for RingBufferIter<'a, T, N> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.ring_buffer.ref_at_index(self.index).ok();
+        self.index = self.index.saturating_add(1);
+        next
+    }
+}
+//------------------End Iterator Implementation------------------
