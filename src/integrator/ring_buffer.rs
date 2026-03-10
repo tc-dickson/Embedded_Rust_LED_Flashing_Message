@@ -94,6 +94,16 @@ impl<T: Copy, const N: usize> Drop for RingBuffer<T, N> {
     }
 }
 
+// Implement PartialEq for testing purposes
+impl<T: Copy + PartialEq, const N: usize> PartialEq for RingBuffer<T, N> {
+    fn eq(&self, other: &Self) -> bool {
+        // We don't need the head and tail values to be the same for equality
+        self.iter()
+            .zip(other)
+            .fold(true, |acc, (l, r)| acc && (l == r))
+    }
+}
+
 //--------------------Iterator Implementation--------------------
 impl<'a, T: Copy, const N: usize> IntoIterator for &'a RingBuffer<T, N> {
     type Item = &'a T;
