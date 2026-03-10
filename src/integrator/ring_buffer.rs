@@ -132,3 +132,90 @@ impl<'a, T: Copy, const N: usize> Iterator for RingBufferIter<'a, T, N> {
     }
 }
 //------------------End Iterator Implementation------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_initialization() {
+        assert_eq!(
+            RingBuffer::<f32, 8>::new(),
+            RingBuffer {
+                buffer: [MaybeUninit::uninit(); 8],
+                head: 0,
+                tail: 0,
+            }
+        )
+    }
+
+    #[test]
+    fn test_push() {
+        let mut buffer = RingBuffer::<f32, 8>::new();
+        assert_eq!(buffer.push(0.0), Ok(()))
+    }
+
+    #[test]
+    fn test_pop() {
+        let mut buffer = RingBuffer::<f32, 8>::new();
+        let _ = buffer.push(1.0);
+        assert_eq!(buffer.pop(), Some(1.0));
+    }
+
+    #[test]
+    fn test_push_overflow() {
+        let mut buffer = RingBuffer::<i32, 4>::new();
+
+        // Note that the buffer can only hold N - 1 values in this implementation
+        let _ = buffer.push(1);
+        let _ = buffer.push(1);
+        let _ = buffer.push(1);
+
+        assert_eq!(buffer.push(1), Err(1));
+    }
+
+    #[test]
+    fn test_pop_underflow() {
+        let mut buffer = RingBuffer::<i32, 4>::new();
+
+        assert_eq!(buffer.pop(), None);
+    }
+
+    #[test]
+    fn test_compare_not_equal() {
+        let mut buffer_1 = RingBuffer::<i32, 8>::new();
+        let mut buffer_2 = RingBuffer::<i32, 8>::new();
+        for i in 0..4 {
+            let _ = buffer_1.push(i);
+        }
+        for i in 0..4 {
+            let _ = buffer_2.push(i * 2);
+        }
+
+        assert_ne!(buffer_1, buffer_2)
+    }
+
+    #[test]
+    fn test_push_pop_compare() {
+        const BUFFER_LENGTH: usize = 8;
+
+        let mut buffer_1 = RingBuffer::<i32, BUFFER_LENGTH>::new();
+        let mut buffer_2 = RingBuffer::<i32, BUFFER_LENGTH>::new();
+        let _ = buffer_1.push(1);
+        let _ = buffer_1.push(2);
+        let _ = buffer_1.push(3);
+        let _ = buffer_1.push(4);
+        let _ = buffer_1.push(5);
+        let _ = buffer_1.push(6);
+        let _ = buffer_1.push(7);
+        let _ = buffer_1.pop();
+        let _ = buffer_1.pop();
+        let _ = buffer_1.pop();
+
+        for i in 4..8 {
+            let _ = buffer_2.push(i);
+        }
+
+        assert_eq!(buffer_1, buffer_2);
+    }
+}
