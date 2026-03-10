@@ -11,8 +11,6 @@ use microbit::{
 use panic_rtt_target as _;
 use rtt_target::{rprintln, rtt_init_print};
 
-mod integrator;
-
 #[entry]
 fn main() -> ! {
     rtt_init_print!();
