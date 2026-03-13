@@ -3,13 +3,21 @@ name = "led_flashing_message"
 version = "0.1.0"
 edition = "2024"
 
-[dependencies]
+[lib]
+name = "led_flashing_message_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "led_flashing_message_firmware"
+path = "src/main.rs"
+
+[target.'cfg(target_os = "none")'.dependencies]
 cortex-m-rt = "0.7.5"
 lsm303agr = "1.1.0"
 microbit-v2 = "0.16.0"
 panic-rtt-target = "0.2.0"
 rtt-target = "0.6.2"
 
-[dependencies.cortex-m]
+[target.'cfg(target_os = "none")'.dependencies.cortex-m]
 version = "0.7.7"
 features = ["inline-asm", "critical-section-single-core"]

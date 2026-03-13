@@ -11,10 +11,11 @@ use microbit::{
 use panic_rtt_target as _;
 use rtt_target::{rprintln, rtt_init_print};
 
+use led_flashing_message_lib::integrator;
 #[entry]
 fn main() -> ! {
     rtt_init_print!();
-    let board = board::Board::take().unwrap();
+    let mut board = board::Board::take().unwrap();
 
     let i2c = twim::Twim::new(board.TWIM0, board.i2c_internal.into(), Frequency::K100);
 
@@ -26,8 +27,9 @@ fn main() -> ! {
         .set_accel_mode_and_odr(&mut timer, AccelMode::Normal, AccelOutputDataRate::Hz100)
         .unwrap();
 
+    let mut integrator = integrator::Integrator::<i32, 32>::new(0);
+
     loop {
-        let x_mg = accel.acceleration().unwrap().x_mg();
-        rprintln!("acceleration: {}", x_mg);
+        let _ = integrator.insert(accel.acceleration().unwrap().x_mg());
     }
 }
