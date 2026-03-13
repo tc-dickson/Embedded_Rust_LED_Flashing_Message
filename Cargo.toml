@@ -17,6 +17,7 @@ lsm303agr = "1.1.0"
 microbit-v2 = "0.16.0"
 panic-rtt-target = "0.2.0"
 rtt-target = "0.6.2"
+embedded-hal = "1.0.0"
 
 [target.'cfg(target_os = "none")'.dependencies.cortex-m]
 version = "0.7.7"
