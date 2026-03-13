@@ -11,7 +11,11 @@ use microbit::{
 use panic_rtt_target as _;
 use rtt_target::{rprintln, rtt_init_print};
 
-use led_flashing_message_lib::integrator;
+use led_flashing_message_lib::{VDir, integrator};
+
+const NEGATIVE_ACCEL_THRESHOLD: i32 = -5;
+const POSITIVE_ACCEL_THRESHOLD: i32 = 5;
+
 #[entry]
 fn main() -> ! {
     rtt_init_print!();
@@ -26,10 +30,23 @@ fn main() -> ! {
     accel
         .set_accel_mode_and_odr(&mut timer, AccelMode::Normal, AccelOutputDataRate::Hz100)
         .unwrap();
+    let _ = accel.set_accel_scale(lsm303agr::AccelScale::G16);
 
     let mut integrator = integrator::Integrator::<i32, 32>::new(0);
+    let mut reading;
 
     loop {
         let _ = integrator.insert(accel.acceleration().unwrap().x_mg());
+        reading = integrator.read();
+
+        match reading {
+            NEGATIVE_ACCEL_THRESHOLD..POSITIVE_ACCEL_THRESHOLD => (),
+            i32::MIN..NEGATIVE_ACCEL_THRESHOLD => {
+                rprintln!("Negative!");
+            }
+            POSITIVE_ACCEL_THRESHOLD..=i32::MAX => {
+                rprintln!("Positive!");
+            }
+        }
     }
 }
