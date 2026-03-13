@@ -10,7 +10,7 @@ use microbit::{
     hal::{Timer, twim::Frequency},
 };
 use panic_rtt_target as _;
-use rtt_target::{rprintln, rtt_init_print};
+// use rtt_target::{rprintln, rtt_init_print};
 
 use led_flashing_message_lib::{LedDisplayDirection, VDir, integrator};
 
@@ -41,7 +41,7 @@ const LED_MESSAGE: [[i32; LED_MESSAGE_LEN]; 5] = [
 
 #[entry]
 fn main() -> ! {
-    rtt_init_print!();
+    // rtt_init_print!();
     let mut board = board::Board::take().unwrap();
 
     let i2c = twim::Twim::new(board.TWIM0, board.i2c_internal.into(), Frequency::K100);
@@ -99,13 +99,13 @@ fn main() -> ! {
 
             match edge {
                 VDir::Positive => {
-                    rprintln!("Positive Edge!");
+                    // rprintln!("Positive Edge!");
                     led_display_direction = Some(LedDisplayDirection(
                         VDir::Positive,
                     ));
                 }
                 VDir::Negative => {
-                    rprintln!("Negative Edge!");
+                    // rprintln!("Negative Edge!");
                     led_display_direction = Some(LedDisplayDirection(
                         VDir::Negative,
                     ));
