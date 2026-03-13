@@ -3,7 +3,7 @@
 use core::mem::MaybeUninit;
 
 #[derive(Debug)]
-struct RingBuffer<T: Copy, const N: usize> {
+pub struct RingBuffer<T: Copy, const N: usize> {
     buffer: [MaybeUninit<T>; N],
     head: usize,
     tail: usize,
@@ -18,10 +18,9 @@ impl<T: Copy, const N: usize> RingBuffer<T, N> {
         }
     }
 
-    pub fn push(&mut self, item: T) -> Result<(), T> {
-        // The ring buffer is full when the next_head equals the tail
-        if Self::next_index(self.head) == self.tail {
-            Err(item)
+    pub fn push(&mut self, item: T) -> Result<(), &str> {
+        if self.is_full() {
+            Err("Buffer is full")
         } else {
             self.buffer[self.head].write(item);
             self.head = Self::next_index(self.head);
@@ -31,7 +30,7 @@ impl<T: Copy, const N: usize> RingBuffer<T, N> {
 
     pub fn pop(&mut self) -> Option<T> {
         // The ring buffer is empty when the head equals the tail
-        if self.head == self.tail {
+        if self.is_empty() {
             None
         } else {
             // Safe because the value will be initialized if tail != head
@@ -39,6 +38,16 @@ impl<T: Copy, const N: usize> RingBuffer<T, N> {
             self.tail = Self::next_index(self.tail);
             val
         }
+    }
+
+    pub fn is_full(&self) -> bool {
+        // The ring buffer is full when the next_head equals the tail
+        Self::next_index(self.head) == self.tail
+    }
+
+    pub fn is_empty(&self) -> bool {
+        // The ring buffer is empty when the head equals the tail
+        self.head == self.tail
     }
 
     fn next_index(index: usize) -> usize {
@@ -118,7 +127,7 @@ impl<'a, T: Copy, const N: usize> IntoIterator for &'a RingBuffer<T, N> {
 }
 
 #[derive(Debug)]
-struct RingBufferIter<'a, T: Copy, const N: usize> {
+pub struct RingBufferIter<'a, T: Copy, const N: usize> {
     ring_buffer: &'a RingBuffer<T, N>,
     index: usize,
 }
