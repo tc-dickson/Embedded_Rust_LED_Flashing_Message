@@ -55,12 +55,17 @@ fn main() -> ! {
         .unwrap();
     let _ = accel.set_accel_scale(lsm303agr::AccelScale::G16);
 
+    let mut timer = Timer::new(board.TIMER1);
+    let mut current_time = 0;
+
     let mut integrator = integrator::Integrator::<i32, 32>::new(0);
     let mut reading;
 
     let mut past_vdir: Option<VDir> = None;
     let mut current_vdir: Option<VDir> = None;
 
+    let mut led_display_direction: Option<LedDisplayDirection> = None;
+    let mut led_column_lit_time: u32;
     let mut current_led_column = 0;
 
     // There has to be a better way of doing this
@@ -88,6 +93,10 @@ fn main() -> ! {
         }
 
         if let Some(edge) = led_flashing_message_lib::edge_detector(&past_vdir, &current_vdir) {
+            // Read the current value of the timer from the last loop before restarting it
+            current_time = timer.read();
+            timer.start(u32::MAX);
+
             match edge {
                 VDir::Positive => {
                     rprintln!("Positive Edge!");
@@ -102,6 +111,25 @@ fn main() -> ! {
                     ));
                 }
             }
+        }
+
+        // Safe to unwrap because LED_MESSAGE_LEN is a constant within the bounds of a u32
+        led_column_lit_time = current_time / u32::try_from(LED_MESSAGE_LEN).unwrap();
+
+        // Prevent divide by 0
+        if led_column_lit_time == 0 {
+            continue;
+        }
+
+        match led_display_direction {
+            Some(LedDisplayDirection(VDir::Positive)) => {
+                current_led_column = (timer.read() / led_column_lit_time) as usize;
+            }
+            Some(LedDisplayDirection(VDir::Negative)) => {
+                current_led_column =
+                    LED_MESSAGE_LEN.saturating_sub((timer.read() / led_column_lit_time) as usize);
+            }
+            None => (),
         }
 
         let i32_to_pin_state = |x: i32| match x {
