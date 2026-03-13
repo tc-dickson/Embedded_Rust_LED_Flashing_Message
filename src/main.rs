@@ -11,7 +11,7 @@ use microbit::{
 use panic_rtt_target as _;
 use rtt_target::{rprintln, rtt_init_print};
 
-use led_flashing_message_lib::{VDir, integrator};
+use led_flashing_message_lib::{LedDisplayDirection, VDir, integrator};
 
 const NEGATIVE_ACCEL_THRESHOLD: i32 = -5;
 const POSITIVE_ACCEL_THRESHOLD: i32 = 5;
@@ -35,6 +35,9 @@ fn main() -> ! {
     let mut integrator = integrator::Integrator::<i32, 32>::new(0);
     let mut reading;
 
+    let mut past_vdir: Option<VDir> = None;
+    let mut current_vdir: Option<VDir> = None;
+
     loop {
         let _ = integrator.insert(accel.acceleration().unwrap().x_mg());
         reading = integrator.read();
@@ -42,11 +45,32 @@ fn main() -> ! {
         match reading {
             NEGATIVE_ACCEL_THRESHOLD..POSITIVE_ACCEL_THRESHOLD => (),
             i32::MIN..NEGATIVE_ACCEL_THRESHOLD => {
-                rprintln!("Negative!");
+                current_vdir = Some(VDir::Negative);
+                // rprintln!("Negative!");
             }
             POSITIVE_ACCEL_THRESHOLD..=i32::MAX => {
-                rprintln!("Positive!");
+                current_vdir = Some(VDir::Positive);
+                // rprintln!("Positive!");
             }
         }
+
+        if let Some(edge) = led_flashing_message_lib::edge_detector(&past_vdir, &current_vdir) {
+            match edge {
+                VDir::Positive => {
+                    rprintln!("Positive Edge!");
+                    led_display_direction = Some(LedDisplayDirection(
+                        VDir::Positive,
+                    ));
+                }
+                VDir::Negative => {
+                    rprintln!("Negative Edge!");
+                    led_display_direction = Some(LedDisplayDirection(
+                        VDir::Negative,
+                    ));
+                }
+            }
+        }
+
+        past_vdir.clone_from(&current_vdir);
     }
 }
