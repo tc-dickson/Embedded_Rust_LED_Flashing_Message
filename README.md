@@ -1,7 +1,7 @@
 # Embedded Rust—LED Flashing Message
 An embedded Rust learning project interfacing GPIO pins, peripheral timers, and an I2C-accessed accelerometer.
 
-[![Demonstration Video](https://img.youtube.com/vi/ynV_N79aajg/0.jpg)](https://www.youtube.com/shorts/ynV_N79aajg)
+[![Demonstration Video](https://img.youtube.com/vi/EViT1CpjVyU/0.jpg)](https://youtube.com/shorts/EViT1CpjVyU)
 
 ## Overview
 This is a project to help me learn Embedded Rust using the Micro:Bit v2 development board. This board features an ARM Cortex M-4 based chip (the nrf52833 from Nordic Semiconductor).
